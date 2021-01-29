@@ -114,7 +114,7 @@ plt.show()
 # code for creating choropleth map for success of marketing campaigns by country
 # change some country codes from dataset so they work properly
 df['Country_Codes'] = df['Country'].replace(
-    {'SP': 'ESP', 'CA': 'CAN', 'US': 'USA', 'SA': 'ZAF', 'ME': 'MEX'}
+    {'CA': 'CAN', 'SA': 'ZAF', 'US': 'USA', 'ME': 'MEX', 'SP': 'ESP'}
 )
 
 campaigns_df = df[['Country_Codes', 'AcceptedCmp1', 'AcceptedCmp2', 'AcceptedCmp3', 'AcceptedCmp4',
@@ -141,3 +141,18 @@ campaigns_map.write_image(
     scale=3
 )
 campaigns_map.show()
+
+# plot illustrating relation between income and spending
+fig = px.scatter(
+    data_frame=df,
+    x='Income',
+    y='Total_Spend',
+    range_x=[0, 200000],
+    trendline='lowess',
+    title='Scatter plot illustrating the relationship between income and total spend'
+)
+fig.write_image(
+    savepath + 'relation_between_income_and_total_spend_scatter.png',
+    scale=3
+)
+fig.show()

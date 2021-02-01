@@ -1,6 +1,10 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly_express as px
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
 
 df = pd.read_csv('marketing_data.csv')
 
@@ -63,6 +67,9 @@ plt.show()
 # given above, below removes these outliers
 df = df[df['Year_Birth'] > 1900].reset_index(drop=True)
 
+# remove largely unnecessary 'ID' and 'Dt_Customer' columns
+df.drop(columns=['ID', 'Dt_Customer'], inplace=True)
+
 # path for saving below visualisations
 savepath = 'C:/Users/Samuel/PycharmProjects/DatasetAnalysisProject/Visualisations/'
 
@@ -88,8 +95,6 @@ plt.title('Boxplots showing relation between number of dependents and number of 
 plt.suptitle("")
 plt.savefig(savepath + 'dependents_and_deals_boxplot.png')
 plt.show()
-
-df.drop(columns=['ID', 'Dt_Customer'], inplace=True)
 
 # bar plot for total spend by country
 df.groupby('Country')['Total_Spend'].sum().sort_values(ascending=False).plot(
@@ -156,3 +161,46 @@ fig.write_image(
     scale=3
 )
 fig.show()
+
+# create heatmap visualisation for dataframe to see correlations
+# first is creation of correlation matrix. 'kendall' method used because some dataframe features are binary
+corr_matrix = df.select_dtypes(include='number').corr(method='kendall')
+
+heatmap = px.imshow(
+    corr_matrix,
+    color_continuous_scale=px.colors.sequential.RdBu,
+    title='Heatmap of correlations in marketing_data.csv'
+)
+heatmap.write_image(
+    savepath + 'marketing_data_correlations_heatmap.png',
+    scale=3
+)
+heatmap.show()
+
+# next, I begin taking steps necessary for constructing linear regression model in order to better
+# predict features that influence purchases.
+# below line isolates categorical features for encoding
+categorical_feats = df.select_dtypes(exclude='number')
+
+encoder = OneHotEncoder(sparse=False).fit(categorical_feats)
+
+# turn encoded categorical features into dataframe
+categoricals_encoded = pd.DataFrame(encoder.transform(categorical_feats))
+categoricals_encoded.columns = encoder.get_feature_names(categoricals_encoded.columns)
+
+# merge encoded categorical features with numeric ones
+numericals = df.drop(columns=categorical_feats.columns)
+df2 = pd.concat([categoricals_encoded, numericals], axis=1)
+
+# below line isolates variables to test against each other, namely 'NumStorePurchases' as y vs other columns for x
+X, y = df2.drop(columns='NumStorePurchases'), df2['NumStorePurchases']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# linear regression model for aforementioned predictions
+linreg = LinearRegression().fit(X_train, y_train)
+
+predicts = linreg.predict(X_test)
+
+# examine accuracy of model and predictions through RMSE (root-mean-square error)
+print("The linear regression model's RMSE is: {0}".format(mean_squared_error(y_test, predicts, squared=False)))

@@ -5,6 +5,7 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
+from sklearn.inspection import permutation_importance
 
 df = pd.read_csv('marketing_data.csv')
 
@@ -186,7 +187,7 @@ encoder = OneHotEncoder(sparse=False).fit(categorical_feats)
 
 # turn encoded categorical features into dataframe
 categoricals_encoded = pd.DataFrame(encoder.transform(categorical_feats))
-categoricals_encoded.columns = encoder.get_feature_names(categoricals_encoded.columns)
+categoricals_encoded.columns = encoder.get_feature_names(categorical_feats.columns)
 
 # merge encoded categorical features with numeric ones
 numericals = df.drop(columns=categorical_feats.columns)
@@ -202,5 +203,22 @@ linreg = LinearRegression().fit(X_train, y_train)
 
 predicts = linreg.predict(X_test)
 
-# examine accuracy of model and predictions through RMSE (root-mean-square error)
+# examine accuracy and quality of model and predictions through RMSE (root-mean-square error)
 print("The linear regression model's RMSE is: {0}".format(mean_squared_error(y_test, predicts, squared=False)))
+
+# calculate permutation importance to identify features that are most predictive of store purchases
+results = permutation_importance(linreg, X_test, y_test)
+importances = results.importances_mean
+
+# create a pandas Series for the permutation importances so that they can be manipulated and show feature names
+# more easily.
+importances_series = pd.Series(importances, index=X_train.columns)
+
+# create horizontal bar plot to illustrate top 5 most significant features
+importances_series.nlargest(5).plot(kind='barh')
+plt.title('Top 5 significant features for affecting number of store purchases')
+plt.savefig(savepath + 'NumStorePurchases_permutation_feature_importance_bar.png',
+            bbox_inches='tight',
+            dpi=300
+            )
+plt.show()

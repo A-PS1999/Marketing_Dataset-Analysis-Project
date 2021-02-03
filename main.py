@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly_express as px
+import shap
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
@@ -149,6 +150,7 @@ campaigns_map.write_image(
 campaigns_map.show()
 
 # plot illustrating relation between income and spending
+# 'range_x' upper limit set to 200000 to leave out outliers that detrimentally affect shape of graph
 fig = px.scatter(
     data_frame=df,
     x='Income',
@@ -214,11 +216,27 @@ importances = results.importances_mean
 # more easily.
 importances_series = pd.Series(importances, index=X_train.columns)
 
+# print top 5 feature names and their permutation feature importance values
+print(importances_series.nlargest())
+
 # create horizontal bar plot to illustrate top 5 most significant features
-importances_series.nlargest(5).plot(kind='barh')
+importances_series.nlargest().plot(kind='barh')
 plt.title('Top 5 significant features for affecting number of store purchases')
 plt.savefig(savepath + 'NumStorePurchases_permutation_feature_importance_bar.png',
             bbox_inches='tight',
+            dpi=300
+            )
+plt.show()
+
+# get SHAP values for our model, to be plotted
+explainer = shap.Explainer(linreg, X_train)
+shap_values = explainer(X_test)
+
+# create beeswarm plot so we can better see how top features affect model's output
+plt.title("SHAP value plot for 'NumStorePurchases'")
+shap.plots.beeswarm(shap_values, max_display=5, show=False)
+plt.tight_layout()
+plt.savefig(savepath + 'NumStorePurchases_shap_beeswarm_plot.png',
             dpi=300
             )
 plt.show()

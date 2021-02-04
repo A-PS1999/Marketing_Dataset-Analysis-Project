@@ -118,7 +118,7 @@ df.groupby('Country')['Total_Purchases'].sum().sort_values(ascending=False).plot
 plt.savefig(savepath + 'total_purchases_by_country_bar.png')
 plt.show()
 
-# code for creating choropleth map for success of marketing campaigns by country
+# code for creating choropleth map for success of marketing campaigns by country.
 # change some country codes from dataset so they work properly
 df['Country_Codes'] = df['Country'].replace(
     {'CA': 'CAN', 'SA': 'ZAF', 'US': 'USA', 'ME': 'MEX', 'SP': 'ESP'}
@@ -240,3 +240,42 @@ plt.savefig(savepath + 'NumStorePurchases_shap_beeswarm_plot.png',
             dpi=300
             )
 plt.show()
+
+# create dataframe and subsequently bar plot for which marketing campaigns have been most successful.
+# first create dataframe of % acceptance for each campaign
+campaign_success = pd.DataFrame(df[['AcceptedCmp1', 'AcceptedCmp2', 'AcceptedCmp3', 'AcceptedCmp4', 'AcceptedCmp5',
+                                    'Response']].mean()*100, columns=['Percentage']).reset_index()
+success_bar = px.bar(
+    campaign_success,
+    x='Percentage',
+    y='index',
+    orientation='h',
+    labels={'Percentage': 'Percentage (%) campaign acceptance',
+            'index': 'Campaign'
+            },
+    title='Bar plot showing percentage (%) marketing campaign success rate'
+)
+success_bar.write_image(savepath + 'marketing_campaign_success_rate_bar.png',
+                        scale=3
+                        )
+success_bar.show()
+
+# collect all columns related to spending, to be used for plotting
+spending_columns = [col for col in df.columns if 'Mnt' in col]
+
+# create frame for mean amount spent on the various product types
+spending_frame = pd.DataFrame(round(df[spending_columns].mean(), 2),
+                              columns=['Average']).sort_values(by='Average').reset_index()
+spending_bar = px.bar(
+    data_frame=spending_frame,
+    x='Average',
+    y='index',
+    text='Average',
+    orientation='h',
+    labels={'index': 'Product Type'},
+    title='Bar plot of average spend per product type'
+)
+spending_bar.write_image(savepath + 'average_product_spend_bar.png',
+                         scale=3
+                         )
+spending_bar.show()

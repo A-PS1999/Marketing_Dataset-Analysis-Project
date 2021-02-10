@@ -266,6 +266,7 @@ spending_columns = [col for col in df.columns if 'Mnt' in col]
 # create frame for mean amount spent on the various product types
 spending_frame = pd.DataFrame(round(df[spending_columns].mean(), 2),
                               columns=['Average']).sort_values(by='Average').reset_index()
+
 spending_bar = px.bar(
     data_frame=spending_frame,
     x='Average',
@@ -279,3 +280,24 @@ spending_bar.write_image(savepath + 'average_product_spend_bar.png',
                          scale=3
                          )
 spending_bar.show()
+
+# collect columns related to the different sales channels, to be plotted
+channel_columns = [col for col in df.columns if 'Num' in col] + ['Total_Purchases', 'Total_Accepted_Cmps']
+
+# create frame for average number of purchases made through the various channels
+channels_frame = pd.DataFrame(round(df[channel_columns].mean(), 2),
+                              columns=['Average']).sort_values(by='Average').reset_index()
+
+channels_bar = px.bar(
+    data_frame=channels_frame,
+    x='Average',
+    y='index',
+    text='Average',
+    orientation='h',
+    labels={'index': 'Channel Type'},
+    title='Bar plot of average number of purchases per channel type'
+)
+channels_bar.write_image(savepath + 'average_channels_purchases_bar.png',
+                         scale=3
+                         )
+channels_bar.show()
